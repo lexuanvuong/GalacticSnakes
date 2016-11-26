@@ -1,1 +1,2 @@
 # GalacticSnakes
+Сделал игру обычную
