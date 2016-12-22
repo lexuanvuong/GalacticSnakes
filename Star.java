@@ -1,33 +1,37 @@
-
-public class Star  {
+package elements;
+import game.Game;
+public class Star {
 	private int StarX;
 	private int StarY;
-	private GalacticSnakes galacticsnakes;
+	private Game game;
 
 	// ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
-	public Star(GalacticSnakes galacticsnakes) {
-		this.galacticsnakes = galacticsnakes;
+	public Star(Game game) {
+		this.game = game;
 	}
+
 	// ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 	public void Random() {
 		boolean go = true;
-                Snake[] snake=new Snake[2];
-                snake=galacticsnakes.getSnake();
+		Snake[] snake = new Snake[2];
+		snake = game.getSnake();
 		while (go) {
 			switch ((int) (Math.random() * 3 + 1)) {
 			case 1: {
-				setStarX((int) (Math.random() * 53));
-				setStarY((int) (Math.random() * 13));
+				setStarX((int) (Math.random() * Game.WIDTH));
+				setStarY((int) (Math.random() * (int) (Game.HEIGHT * 1 / 3)));
 			}
 				break;
 			case 2: {
-				setStarX((int) (Math.random() * 58));
-				setStarY((int) (Math.random() * 12 + 14));
+				setStarX((int) (Math.random() * Game.WIDTH));
+				setStarY((int) (Math.random() * (int) (Game.HEIGHT * 1 / 3)
+						+ (int) (Game.HEIGHT * 1 / 3)));
 			}
 				break;
 			case 3: {
-				setStarX((int) (Math.random() * 19 + 19));
-				setStarY((int) (Math.random() * 12 + 27));
+				setStarX((int) (Math.random() * (Game.WIDTH * 1 / 3) + (Game.WIDTH * 1 / 3)));
+				setStarY((int) (Math.random() * (int) (Game.HEIGHT * 1 / 3) - 5
+						+ (int) (Game.HEIGHT * 2 / 3)));
 			}
 				break;
 			}
@@ -39,18 +43,20 @@ public class Star  {
 		}
 	}
 
-    public int getStarX() {
-        return StarX;
-    }
+	public int getStarX() {
+		return StarX;
+	}
 
-    public int getStarY() {
-        return StarY;
-    }
-	public void setStarX(int starX) {
+	public int getStarY() {
+		return StarY;
+	}
+
+	public synchronized void setStarX(int starX) {
 		StarX = starX;
 	}
-	public void setStarY(int starY) {
+
+	public synchronized void setStarY(int starY) {
 		StarY = starY;
 	}
-        
+
 }

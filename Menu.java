@@ -1,102 +1,69 @@
+package game;
 
-import java.awt.Graphics;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Image;
-import java.awt.Insets;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.concurrent.Executors;
-import javax.imageio.ImageIO;
-import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
+import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+import connection.Client;
+import connection.Host;
+import ui.menu.MenuUI;
 
-public class Menu extends JFrame {
-	private JButton buttonStart = new JButton("OK");
-	private BufferedImage buttonIcon1, buttonIcon2;
-	private Image newimg1, newimg2;
-	private JTextField IP, Name;
+public class Menu extends MenuUI {
+
 	private Menu thisMenu;
-
+	private boolean clicked = false;
+	private Client client;
+	private Host host;
+	
 	public Menu() {
-		super("GalacticSnakes");
-		BackPanel backpanel = new BackPanel();
-		backpanel.setLayout(new GridBagLayout());
-		GridBagConstraints constraints = new GridBagConstraints();
-		constraints.gridx = 1;
-		constraints.gridy = 0;
-		constraints.insets = new Insets(1, 1, 0, 1);
-		try {
-			loadImages();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		AddStartButton();
-		backpanel.add(buttonStart, constraints);
-		constraints.gridx = 0;
-		constraints.gridy = 2;
-		constraints.insets = new Insets(1, 1, 10, 1);
-		backpanel.add(new JLabel("IP"), constraints);
-		constraints.gridx = 1;
-		IP = new JTextField(10);
-		backpanel.add(IP, constraints);
-		// ---------------------------------
-		constraints.gridx = 0;
-		constraints.gridy = 3;
-		backpanel.add(new JLabel("Name"), constraints);
-		constraints.gridx = 1;
-		Name = new JTextField(10);
-		backpanel.add(Name, constraints);
-		// ---------------------------------
-		add(backpanel);
-		// ---------------------------------
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setSize(250, 270);
-		this.setResizable(false);
-		setLocationRelativeTo(null);
+		super();
+		givePBlistener();
+		giveCClistener();
 	}
-
-	public void AddStartButton() {
-		newimg1 = buttonIcon1.getScaledInstance(100, 100, java.awt.Image.SCALE_SMOOTH);
-		newimg2 = buttonIcon2.getScaledInstance(100, 100, java.awt.Image.SCALE_SMOOTH);
-		buttonStart = new JButton(new ImageIcon(newimg1));
-		buttonStart.setBorder(BorderFactory.createEmptyBorder());
-		buttonStart.setContentAreaFilled(false);
+	public void givePBlistener() {
 		thisMenu = this;
-		buttonStart.addMouseListener(new MouseListener() {
+		getButtonStart().addMouseListener(new MouseListener() {
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
 				Executors.newCachedThreadPool().execute(new Runnable() {
 					@Override
 					public void run() {
-						JFrame v = new JFrame();
-						v.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-						v.setResizable(false);
-						v.setSize(58 * 20, 45 * 20);
-						v.setLocationRelativeTo(null);
-						v.setTitle("GalacticSnakes");
-						v.add(new GalacticSnakes(v,thisMenu, Name.getText(), IP.getText()));
-						v.setVisible(true);
+						if (!clicked) {
+							clicked = true;
+							client = new Client(getIP().getText(), getNameP().getText());
+							if (!client.connect()) {
+								host = new Host(getIP().getText(), getNameP().getText());
+								if (host.createServer()) {
+									getWaitLabel().setVisible(true);
+									getCancel().setVisible(true);
+									if(host.waitforrequest()){
+										thisMenu.setVisible(false);
+										InitGame(true);										
+									}
+								}else{
+									JOptionPane.showMessageDialog(Menu.this, "Неверный IP-адресс");
+									clicked=false;
+								}
+							} else {
+								thisMenu.setVisible(false);
+								InitGame(false);
+							}
+						}
 					}
 				});
 			}
 
 			@Override
 			public void mouseEntered(MouseEvent arg0) {
-				buttonStart.setIcon(new ImageIcon(newimg2));
+				getButtonStart().setIcon(new ImageIcon(getNewimg2()));
 			}
 
 			@Override
 			public void mouseExited(MouseEvent arg0) {
-				buttonStart.setIcon(new ImageIcon(newimg1));
+				getButtonStart().setIcon(new ImageIcon(getNewimg1()));
 			}
 
 			@Override
@@ -108,27 +75,46 @@ public class Menu extends JFrame {
 			}
 		});
 	}
-
-	public void loadImages() throws IOException {
-		buttonIcon2 = ImageIO.read(getClass().getResource("/images/playbutton1.png"));
-		buttonIcon1 = ImageIO.read(getClass().getResource("/images/playbutton2.png"));
-	}
-
-	public class BackPanel extends JPanel {
-		private BufferedImage Ibackground;
-
-		public BackPanel() {
-			try {
-				Ibackground = ImageIO.read(getClass().getResourceAsStream("/images/66793518-generic-wallpapers.jpg"));
-			} catch (IOException e) {
-				e.printStackTrace();
+	public void giveCClistener(){
+			getCancel().addMouseListener(new MouseListener() {
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+				getWaitLabel().setVisible(false);
+				getCancel().setVisible(false);
+				clicked=false;
+				host.Stop();	
 			}
-		}
 
-		public void paintComponent(Graphics g) {
-			super.paintComponent(g);
-			g.drawImage(Ibackground, 0, 0, 250, 250, null);
-		}
+			@Override
+			public void mouseEntered(MouseEvent arg0) {
+				getButtonStart().setIcon(new ImageIcon(getNewimg2()));
+			}
+
+			@Override
+			public void mouseExited(MouseEvent arg0) {
+				getButtonStart().setIcon(new ImageIcon(getNewimg1()));
+			}
+
+			@Override
+			public void mousePressed(MouseEvent arg0) {
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent arg0) {
+			}
+		});
+	}
+	public void InitGame(boolean host) {
+		getWaitLabel().setVisible(false);
+		getCancel().setVisible(false);
+		JFrame v = new JFrame();
+		v.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		v.setSize(Game.WIDTH * Game.FACTOR + 5, Game.HEIGHT * Game.FACTOR + 27);
+		v.setLocationRelativeTo(null);
+		v.setTitle("GalacticSnakes");
+		v.add(new Game(v, thisMenu,host, getNameP().getText(), getIP().getText()));
+		v.setResizable(false);
+		v.setVisible(true);
 	}
 
 	public static void main(String[] args) {
@@ -139,4 +125,25 @@ public class Menu extends JFrame {
 			}
 		});
 	}
+
+	public boolean isClicked() {
+		return clicked;
+	}
+
+	public void setClicked(boolean clicked) {
+		this.clicked = clicked;
+	}
+	public Host getHost() {
+		return host;
+	}
+	public void setHost(Host host) {
+		this.host = host;
+	}
+	public Client getClient() {
+		return client;
+	}
+	public void setClient(Client client) {
+		this.client = client;
+	}
+
 }
